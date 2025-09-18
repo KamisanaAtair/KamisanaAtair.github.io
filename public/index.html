@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 爬虫练习靶场 - MySQL版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 20px;
+        }
+
+        .title {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            color: #4CAF50;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-connected {
+            background-color: #4CAF50;
+            box-shadow: 0 0 10px #4CAF50;
+        }
+
+        .status-disconnected {
+            background-color: #F44336;
+            box-shadow: 0 0 10px #F44336;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(76, 175, 80, 0.2);
+            border: 2px solid #4CAF50;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #4CAF50;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .visitor-log {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            background: rgba(0, 0, 0, 0.3);
+            margin: 5px 0;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #4CAF50;
+            animation: slideIn 0.5s ease;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+        }
+
+        .log-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            font-size: 0.9em;
+        }
+
+        .log-detail {
+            color: #ccc;
+            font-size: 0.8em;
+            margin-top: 5px;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .api-section {
+            background: rgba(33, 150, 243, 0.2);
+            border: 2px solid #2196F3;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .api-endpoint {
+            background: rgba(0, 0, 0, 0.3);
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #2196F3;
+        }
+
+        .method {
+            display: inline-block;
+            background: #4CAF50;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .method.post { background: #FF9800; }
+        .method.delete { background: #F44336; }
+
+        .challenges {
+            background: rgba(255, 193, 7, 0.2);
+            border: 2px solid #FFC107;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .challenge-item {
+            margin: 10px 0;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
+            border-left: 4px solid #FFC107;
+        }
+
+        .control-panel {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        button {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3);
+        }
+
+        button.danger {
+            background: linear-gradient(45deg, #F44336, #d32f2f);
+        }
+
+        button.info {
+            background: linear-gradient(45deg, #2196F3, #1976D2);
+        }
+
+        .real-time-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px 15px;
+            border-radius: 20px;
+            border: 2px solid #4CAF50;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4CAF50;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .ip-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .ip-stat-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 0.8em;
+        }
+
+        .encouragement {
+            text-align: center;
+            font-size: 1.2em;
+            color: #4CAF50;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+            margin: 20px 0;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .error-message {
+            background: rgba(244, 67, 54, 0.2);
+            border: 2px solid #F44336;
+            color: #fff;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            display: none;
+        }
+
+        .success-message {
+            background: rgba(76, 175, 80, 0.2);
+            border: 2px solid #4CAF50;
+            color: #fff;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="real-time-indicator">
+        <span class="status-indicator" id="connectionStatus"></span>
+        <span id="connectionText">连接中...</span>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1 class="title">🎯 爬虫练习靶场</h1>
+            <p class="subtitle">MySQL数据库版 - 真实的访问统计与持久化存储</p>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+        <div class="success-message" id="successMessage"></div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="totalVisits">
+                    <div class="loading" id="loadingTotal"></div>
+                </div>
+                <div class="stat-label">总访问次数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="uniqueIPs">
+                    <div class="loading" id="loadingUnique"></div>
+                </div>
+                <div class="stat-label">独立访客IP</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="yourVisits">
+                    <div class="loading" id="loadingYour"></div>
+                </div>
+                <div class="stat-label">你的访问次数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="todayVisits">
+                    <div class="loading" id="loadingToday"></div>
+                </div>
+                <div class="stat-label">今日访问</div>
+            </div>
+        </div>
+
+        <div class="visitor-log">
+            <h3>🔍 实时访问日志 (最新20条)</h3>
+            <div id="logContainer">
+                <div class="log-entry">
+                    <div>
+                        <div>正在加载访问记录...</div>
+                        <div class="loading"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="api-section">
+            <h3>🔧 API 接口文档</h3>
+            <div class="api-endpoint">
+                <span class="method">GET</span>
+                <strong>/api/stats</strong> - 获取访问统计数据
+                <div style="margin-top: 5px; font-size: 0.8em; color: #ccc;">
+                    返回：总访问数、独立IP数、今日访问数等
+                </div>
+            </div>
+            <div class="api-endpoint">
+                <span class="method">GET</span>
+                <strong>/api/logs</strong> - 获取访问日志
+                <div style="margin-top: 5px; font-size: 0.8em; color: #ccc;">
+                    参数：limit=数量, offset=偏移量
+                </div>
+            </div>
+            <div class="api-endpoint">
+                <span class="method post">POST</span>
+                <strong>/api/visit</strong> - 记录一次访问
+                <div style="margin-top: 5px; font-size: 0.8em; color: #ccc;">
+                    自动记录IP、User-Agent、时间戳等信息
+                </div>
+            </div>
+            <div class="api-endpoint">
+                <span class="method">GET</span>
+                <strong>/api/ip-stats</strong> - 获取IP访问统计
+                <div style="margin-top: 5px; font-size: 0.8em; color: #ccc;">
+                    返回各IP的访问次数排行
+                </div>
+            </div>
+            <div class="api-endpoint">
+                <span class="method delete">DELETE</span>
+                <strong>/api/logs</strong> - 清空访问日志
+                <div style="margin-top: 5px; font-size: 0.8em; color: #ccc;">
+                    需要管理员权限
+                </div>
+            </div>
+        </div>
+
+        <div class="challenges">
+            <h3>🚀 爬虫挑战任务 - MySQL版</h3>
+            <div class="challenge-item">
+                <strong>初级:</strong> 使用requests库访问各个API接口，观察数据库中的变化
+            </div>
+            <div class="challenge-item">
+                <strong>中级:</strong> 编写脚本批量访问，测试数据库的并发处理能力
+            </div>
+            <div class="challenge-item">
+                <strong>高级:</strong> 实现数据分析脚本，统计访问模式和热点时间段
+            </div>
+            <div class="challenge-item">
+                <strong>专家:</strong> 尝试SQL注入测试（仅限学习环境），验证后端安全性
+            </div>
+            <div class="challenge-item">
+                <strong>大师:</strong> 实现分布式爬虫，模拟多IP访问并分析数据分布
+            </div>
+        </div>
+
+        <div class="control-panel">
+            <button onclick="recordVisit()">📝 记录访问</button>
+            <button onclick="refreshStats()" class="info">🔄 刷新统计</button>
+            <button onclick="exportData()" class="info">📊 导出数据</button>
+            <button onclick="showIPStats()">📈 IP统计</button>
+            <button onclick="clearLogs()" class="danger">🗑️ 清空日志</button>
+            <button onclick="testAPI()">🧪 测试API</button>
+        </div>
+
+        <div class="encouragement" id="encouragement">
+            🌟 使用真实数据库，体验专业级的数据持久化！🌟
+        </div>
+
+        <!-- IP统计模态框 -->
+        <div id="ipStatsModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000;">
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.9); padding: 30px; border-radius: 15px; max-width: 80%; max-height: 80%; overflow-y: auto;">
+                <h3 style="color: #4CAF50; margin-bottom: 20px;">📊 IP访问统计</h3>
+                <div id="ipStatsContent"></div>
+                <button onclick="closeIPStats()" style="margin-top: 20px;">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3000/api';
+        let currentUserIP = null;
+
+        // 页面加载时初始化
+        window.addEventListener('load', async function() {
+            console.log('🚀 页面加载完成，开始初始化...');
+            await checkConnection();
+            await recordVisit();
+            await refreshStats();
+            await refreshLogs();
+            
+            // 定时刷新数据
+            setInterval(refreshStats, 30000); // 30秒刷新一次统计
+            setInterval(refreshLogs, 60000);  // 60秒刷新一次日志
+        });
+
+        // 检查服务器连接
+        async function checkConnection() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                if (response.ok) {
+                    updateConnectionStatus(true);
+                } else {
+                    throw new Error('服务器响应异常');
+                }
+            } catch (error) {
+                console.error('连接检查失败:', error);
+                updateConnectionStatus(false);
+            }
+        }
+
+        // 更新连接状态显示
+        function updateConnectionStatus(connected) {
+            const statusEl = document.getElementById('connectionStatus');
+            const textEl = document.getElementById('connectionText');
+            
+            if (connected) {
+                statusEl.className = 'status-indicator status-connected';
+                textEl.textContent = '数据库已连接';
+            } else {
+                statusEl.className = 'status-indicator status-disconnected';
+                textEl.textContent = '数据库断开';
+            }
+        }
+
+        // 记录访问
+        async function recordVisit() {
+            try {
+                showMessage('正在记录访问...', 'info');
+                const response = await fetch(`${API_BASE}/visit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        userAgent: navigator.userAgent,
+                        referer: document.referrer || '直接访问',
+                        screenResolution: `${screen.width}x${screen.height}`,
+                        language: navigator.language
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentUserIP = data.ip;
+                    showMessage('✅ 访问记录成功！', 'success');
+                    await refreshStats();
+                    await refreshLogs();
+                    showEncouragement();
+                } else {
+                    throw new Error('记录访问失败');
+                }
+            } catch (error) {
+                console.error('记录访问出错:', error);
+                showMessage('❌ 访问记录失败，请检查服务器连接', 'error');
+            }
+        }
+
+        // 刷新统计数据
+        async function refreshStats() {
+            try {
+                const response = await fetch(`${API_BASE}/stats`);
+                if (!response.ok) throw new Error('获取统计数据失败');
+                
+                const stats = await response.json();
+                
+                // 隐藏加载动画
+                document.querySelectorAll('.loading').forEach(el => el.style.display = 'none');
+                
+                // 更新统计数字
+                document.getElementById('totalVisits').textContent = stats.totalVisits || 0;
+                document.getElementById('uniqueIPs').textContent = stats.uniqueIPs || 0;
+                document.getElementById('yourVisits').textContent = stats.yourVisits || 0;
+                document.getElementById('todayVisits').textContent = stats.todayVisits || 0;
+
+            } catch (error) {
+                console.error('刷新统计出错:', error);
+                showMessage('刷新统计数据失败', 'error');
+            }
+        }
+
+        // 刷新访问日志
+        async function refreshLogs() {
+            try {
+                const response = await fetch(`${API_BASE}/logs?limit=20`);
+                if (!response.ok) throw new Error('获取日志失败');
+                
+                const logs = await response.json();
+                const container = document.getElementById('logContainer');
+                
+                if (logs.length === 0) {
+                    container.innerHTML = '<div class="log-entry"><div>暂无访问记录</div></div>';
+                    return;
+                }
+
+                container.innerHTML = logs.map(log => `
+                    <div class="log-entry">
+                        <div>
+                            <div class="log-info">
+                                <div><strong>IP:</strong> ${log.ip_address}</div>
+                                <div><strong>时间:</strong> ${formatTime(log.visit_time)}</div>
+                            </div>
+                            <div class="log-detail">
+                                <div><strong>浏览器:</strong> ${getBrowserFromUA(log.user_agent)}</div>
+                                <div><strong>来源:</strong> ${log.referer}</div>
+                                ${log.screen_resolution ? `<div><strong>分辨率:</strong> ${log.screen_resolution}</div>` : ''}
+                            </div>
+                        </div>
+                        <div style="text-align: right; color: #4CAF50; font-weight: bold;">
+                            #${log.id}
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                console.error('刷新日志出错:', error);
+                showMessage('刷新访问日志失败', 'error');
+            }
+        }
+
+        // 显示IP统计
+        async function showIPStats() {
+            try {
+                const response = await fetch(`${API_BASE}/ip-stats`);
+                if (!response.ok) throw new Error('获取IP统计失败');
+                
+                const ipStats = await response.json();
+                const content = document.getElementById('ipStatsContent');
+                
+                content.innerHTML = `
+                    <div class="ip-stats">
+                        ${ipStats.map((stat, index) => `
+                            <div class="ip-stat-item">
+                                <div style="font-weight: bold; color: #4CAF50;">#${index + 1}</div>
+                                <div><strong>IP:</strong> ${stat.ip_address}</div>
+                                <div><strong>访问次数:</strong> ${stat.visit_count}</div>
+                                <div><strong>最后访问:</strong> ${formatTime(stat.last_visit)}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                
+                document.getElementById('ipStatsModal').style.display = 'block';
+                
+            } catch (error) {
+                console.error('获取IP统计出错:', error);
+                showMessage('获取IP统计失败', 'error');
+            }
+        }
+
+        // 关闭IP统计模态框
+        function closeIPStats() {
+            document.getElementById('ipStatsModal').style.display = 'none';
+        }
+
+        // 清空日志
+        async function clearLogs() {
+            if (!confirm('确定要清空所有访问日志吗？此操作不可恢复！')) return;
+            
+            try {
+                const response = await fetch(`${API_BASE}/logs`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    showMessage('✅ 日志清空成功！', 'success');
+                    await refreshStats();
+                    await refreshLogs();
+                } else {
+                    throw new Error('清空日志失败');
+                }
+            } catch (error) {
+                console.error('清空日志出错:', error);
+                showMessage('❌ 清空日志失败', 'error');
+            }
+        }
+
+        // 导出数据
+        async function exportData() {
+            try {
+                showMessage('正在导出数据...', 'info');
+                const response = await fetch(`${API_BASE}/export`);
+                if (!response.ok) throw new Error('导出失败');
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `crawler_data_${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                showMessage('✅ 数据导出成功！', 'success');
+            } catch (error) {
+                console.error('导出数据出错:', error);
+                showMessage('❌ 导出数据失败', 'error');
+            }
+        }
+
+        // 测试API
+        async function testAPI() {
+            const tests = [
+                { name: '健康检查', url: `${API_BASE}/health` },
+                { name: '获取统计', url: `${API_BASE}/stats` },
+                { name: '获取日志', url: `${API_BASE}/logs?limit=5` }
+            ];
+            
+            let results = '🧪 API测试结果：\n\n';
+            
+            for (const test of tests) {
+                try {
+                    const start = Date.now();
+                    const response = await fetch(test.url);
+                    const time = Date.now() - start;
+                    const status = response.ok ? '✅ 成功' : '❌ 失败';
+                    results += `${test.name}: ${status} (${time}ms)\n`;
+                } catch (error) {
+                    results += `${test.name}: ❌ 错误 - ${error.message}\n`;
+                }
+            }
+            
+            alert(results);
+        }
+
+        // 工具函数
+        function formatTime(timeString) {
+            return new Date(timeString).toLocaleString('zh-CN');
+        }
+
+        function getBrowserFromUA(userAgent) {
+            if (userAgent.includes('Chrome')) return 'Chrome';
+            if (userAgent.includes('Firefox')) return 'Firefox';
+            if (userAgent.includes('Safari')) return 'Safari';
+            if (userAgent.includes('Edge')) return 'Edge';
+            return 'Unknown';
+        }
+
+        function showMessage(message, type) {
+            const errorEl = document.getElementById('errorMessage');
+            const successEl = document.getElementById('successMessage');
+            
+            // 隐藏所有消息
+            errorEl.style.display = 'none';
+            successEl.style.display = 'none';
+            
+            // 显示对应类型的消息
+            if (type === 'error') {
+                errorEl.textContent = message;
+                errorEl.style.display = 'block';
+                setTimeout(() => errorEl.style.display = 'none', 5000);
+            } else if (type === 'success') {
+                successEl.textContent = message;
+                successEl.style.display = 'block';
+                setTimeout(() => successEl.style.display = 'none', 3000);
+            } else if (type === 'info') {
+                successEl.textContent = message;
+                successEl.style.display = 'block';
+                setTimeout(() => successEl.style.display = 'none', 2000);
+            }
+        }
+
+        function showEncouragement() {
+            const messages = [
+                "🎉 太棒了！数据已成功存储到MySQL数据库！",
+                "🚀 你正在使用专业级的数据持久化方案！",
+                "⭐ 每一次访问都被完美记录！",
+                "🔥 数据库操作成功！继续挑战更复杂的功能！",
+                "💪 从前端到数据库，你正在成为全栈开发者！"
+            ];
+            
+            const encouragementEl = document.getElementById('encouragement');
+            encouragementEl.textContent = messages[Math.floor(Math.random() * messages.length)];
+        }
+
+        // 点击模态框背景关闭
+        document.getElementById('ipStatsModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeIPStats();
+            }
+        });
+    </script>
+</body>
+</html>
